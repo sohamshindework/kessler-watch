@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kessler-watch"
+version = "0.1.0"
+description = "Open, reproducible public-catalogue orbital screening and research"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2.1", "scipy>=1.14", "sgp4>=2.24"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+kessler-watch = "kessler_watch.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

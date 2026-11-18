@@ -1,0 +1,45 @@
+name: Daily catalogue and screening
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Objects to screen (0 = all; large runs may exceed runner budget)'
+        default: '500'
+      days:
+        description: 'Forecast horizon in days'
+        default: '7'
+permissions:
+  contents: write
+concurrency:
+  group: catalogue-update
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -e .
+      - name: Download, archive, screen and evaluate
+        env:
+          SCREEN_LIMIT: ${{ inputs.limit || '500' }}
+          HORIZON_DAYS: ${{ inputs.days || '7' }}
+        run: kessler-watch --group active --limit "$SCREEN_LIMIT" --days "$HORIZON_DAYS"
+      - name: Commit daily data
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/history web/public/data/latest.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'data: daily public catalogue and screening'
+            git push
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: public-catalogue-snapshot
+          path: web/public/data/latest.json
